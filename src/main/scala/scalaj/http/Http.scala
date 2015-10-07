@@ -284,7 +284,7 @@ case class HttpRequest(
     * @tparam T the type returned by the input stream parser
     * @param parser function to process the response body InputStream
     */
-  def exec[T](parser: (Int, Map[String, String], InputStream) => T): HttpResponse[T] = {
+  def exec[T](parser: (Int, Map[String, String], InputStream) => T, closeStreamsAtReturn: Boolean = true): HttpResponse[T] = {
     val urlToFetch: URL = new URL(urlBuilder(this))
     proxyConfig.map(urlToFetch.openConnection).getOrElse(urlToFetch.openConnection) match {
       case conn: HttpURLConnection =>
@@ -305,7 +305,8 @@ case class HttpRequest(
           case e: java.io.IOException if conn.getResponseCode > 0 =>
             toResponse(conn, parser, conn.getErrorStream)
         } finally {
-          closeStreams(conn)
+          if (closeStreamsAtReturn)
+            closeStreams(conn)
         }
     }
   }
